@@ -223,7 +223,7 @@
     <div class="header">
       <h1>Generador de enlaces de datos de Google Sheets</h1>
       <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.5rem;">
-        Versión 1.4.0 - Solución definitiva
+        Versión 1.5.0 - Corrección definitiva (gracias al usuario)
       </div>
     </div>
     
@@ -272,7 +272,8 @@
           Formato de salida
         </label>
         <div class="description">
-          Selecciona el formato en el que quieres obtener los datos de tu hoja de cálculo.
+          Selecciona el formato en el que quieres obtener los datos de tu hoja de cálculo.<br>
+          <small><strong>Nota:</strong> El formato JSON viene envuelto en <code>google.visualization.Query.setResponse()</code> - la aplicación lo extrae automáticamente.</small>
         </div>
         <select id="outputFormat">
           <option value="csv">CSV - Separado por comas (ideal para Excel)</option>
@@ -293,9 +294,6 @@
         <button class="btn-secondary" id="copyButton" onclick="copyRawUrl()">
           <span>📋</span>
           Copiar URL al portapapeles
-        </button>
-        <button onclick="debugFormat()" style="padding: 0.75rem 1rem; border: 2px solid #ff6b6b; background: #ffe0e0; color: #c92a2a; border-radius: 8px; font-size: 0.9rem; cursor: pointer;">
-          🐛 Debug formato
         </button>
       </div>
       
@@ -457,22 +455,6 @@
       
       document.getElementById('currentFormat').textContent = formatLabels[currentFormat] || currentFormat.toUpperCase();
     });
-    
-    // Función de debugging manual
-    function debugFormat() {
-      const select = document.getElementById('outputFormat');
-      console.log('🐛 === DEBUG MANUAL ===');
-      console.log('🐛 Elemento select:', select);
-      console.log('🐛 Valor actual:', select.value);
-      console.log('🐛 Selected index:', select.selectedIndex);
-      console.log('🐛 Opciones disponibles:');
-      Array.from(select.options).forEach((opt, i) => {
-        console.log(`🐛   ${i}: value="${opt.value}" selected=${opt.selected} text="${opt.text}"`);
-      });
-      console.log('🐛 === FIN DEBUG ===');
-      
-      alert(`Formato actual detectado: ${select.value}\nRevisa la consola para más detalles.`);
-    }
   </script>
 </body>
 </html>
