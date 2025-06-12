@@ -223,7 +223,7 @@
     <div class="header">
       <h1>Generador de enlaces de datos de Google Sheets</h1>
       <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.5rem;">
-        Versión 1.2.0 - Soporte múltiples formatos
+        Versión 1.3.0 - Corrección crítica de formatos
       </div>
     </div>
     
@@ -293,6 +293,9 @@
         <button class="btn-secondary" id="copyButton" onclick="copyRawUrl()">
           <span>📋</span>
           Copiar URL al portapapeles
+        </button>
+        <button onclick="debugFormat()" style="padding: 0.75rem 1rem; border: 2px solid #ff6b6b; background: #ffe0e0; color: #c92a2a; border-radius: 8px; font-size: 0.9rem; cursor: pointer;">
+          🐛 Debug formato
         </button>
       </div>
       
@@ -412,7 +415,7 @@
     // Auto-update when format changes
     document.getElementById('outputFormat').addEventListener('change', function(e) {
       const selectedFormat = e.target.value;
-      console.log('Formato cambiado a:', selectedFormat); // Debug
+      console.log('🔄 EVENTO CHANGE - Formato cambiado a:', selectedFormat);
       
       // Update format indicator
       const formatLabels = {
@@ -424,13 +427,23 @@
       document.getElementById('currentFormat').textContent = formatLabels[selectedFormat] || selectedFormat.toUpperCase();
       
       const inputUrl = document.getElementById('inputUrl').value.trim();
+      console.log('🔄 URL presente para regenerar:', !!inputUrl);
+      
       if (inputUrl) {
-        generateRawUrl();
+        console.log('🔄 LLAMANDO A generateRawUrl() por cambio de formato...');
+        // Pequeño delay para asegurar que el DOM se ha actualizado
+        setTimeout(() => {
+          generateRawUrl();
+        }, 50);
+      } else {
+        console.log('🔄 No hay URL, saltando regeneración');
       }
     });
     
     // Show current selected format on page load
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('📱 DOM LOADED - Inicializando...');
+      
       const formatSelect = document.getElementById('outputFormat');
       const formatLabels = {
         csv: 'CSV - Separado por comas',
@@ -438,9 +451,28 @@
         html: 'HTML - Tabla web',
         tsv: 'TSV - Separado por tabulaciones'
       };
-      document.getElementById('currentFormat').textContent = formatLabels[formatSelect.value] || formatSelect.value.toUpperCase();
-      console.log('Formato inicial:', formatSelect.value);
+      
+      const currentFormat = formatSelect.value;
+      console.log('📱 Formato inicial detectado:', currentFormat);
+      
+      document.getElementById('currentFormat').textContent = formatLabels[currentFormat] || currentFormat.toUpperCase();
     });
+    
+    // Función de debugging manual
+    function debugFormat() {
+      const select = document.getElementById('outputFormat');
+      console.log('🐛 === DEBUG MANUAL ===');
+      console.log('🐛 Elemento select:', select);
+      console.log('🐛 Valor actual:', select.value);
+      console.log('🐛 Selected index:', select.selectedIndex);
+      console.log('🐛 Opciones disponibles:');
+      Array.from(select.options).forEach((opt, i) => {
+        console.log(`🐛   ${i}: value="${opt.value}" selected=${opt.selected} text="${opt.text}"`);
+      });
+      console.log('🐛 === FIN DEBUG ===');
+      
+      alert(`Formato actual detectado: ${select.value}\nRevisa la consola para más detalles.`);
+    }
   </script>
 </body>
 </html>
