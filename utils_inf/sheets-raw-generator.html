@@ -277,6 +277,9 @@
           <option value="html">HTML - Tabla lista para mostrar en web</option>
           <option value="tsv">TSV - Separado por tabulaciones</option>
         </select>
+        <div id="formatIndicator" style="margin-top: 0.5rem; padding: 0.5rem; background: #e3f2fd; border-radius: 4px; font-size: 0.9rem;">
+          <strong>Formato actual:</strong> <span id="currentFormat">CSV</span>
+        </div>
       </div>
       
       <div class="button-group">
@@ -404,11 +407,36 @@
     });
     
     // Auto-update when format changes
-    document.getElementById('outputFormat').addEventListener('change', function() {
+    document.getElementById('outputFormat').addEventListener('change', function(e) {
+      const selectedFormat = e.target.value;
+      console.log('Formato cambiado a:', selectedFormat); // Debug
+      
+      // Update format indicator
+      const formatLabels = {
+        csv: 'CSV - Separado por comas',
+        json: 'JSON - Formato para APIs',
+        html: 'HTML - Tabla web',
+        tsv: 'TSV - Separado por tabulaciones'
+      };
+      document.getElementById('currentFormat').textContent = formatLabels[selectedFormat] || selectedFormat.toUpperCase();
+      
       const inputUrl = document.getElementById('inputUrl').value.trim();
       if (inputUrl) {
         generateRawUrl();
       }
+    });
+    
+    // Show current selected format on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const formatSelect = document.getElementById('outputFormat');
+      const formatLabels = {
+        csv: 'CSV - Separado por comas',
+        json: 'JSON - Formato para APIs',
+        html: 'HTML - Tabla web',
+        tsv: 'TSV - Separado por tabulaciones'
+      };
+      document.getElementById('currentFormat').textContent = formatLabels[formatSelect.value] || formatSelect.value.toUpperCase();
+      console.log('Formato inicial:', formatSelect.value);
     });
   </script>
 </body>
