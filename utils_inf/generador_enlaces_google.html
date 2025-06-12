@@ -18,6 +18,8 @@
     .form-group{margin-bottom:1.5rem}
     .form-group label{display:block;font-weight:600;margin-bottom:.5rem;color:#2c3e50}
     .form-group .description{font-size:.9rem;color:#6c757d;margin-bottom:.8rem;line-height:1.4}
+    .dev-note{background:#f1f3f5;border:1px solid #dee2e6;padding:.8rem;border-radius:8px;font-size:.9rem}
+    .dev-note strong{color:#0d6efd}
     input[type=text],select{width:100%;padding:.75rem;border:2px solid #e9ecef;border-radius:8px;font-size:1rem;transition:border-color .3s ease}
     select{background:#fff;cursor:pointer}
     input[type=text]:focus,select:focus{outline:none;border-color:#4285f4;box-shadow:0 0 0 3px rgba(66,133,244,.1)}
@@ -27,10 +29,14 @@
     button:disabled{background-color:#ccc;cursor:not-allowed}
     .btn-primary{background:#4285f4;color:#fff}
     .btn-primary:not(:disabled):hover{background:#3367d6;transform:translateY(-1px)}
-    .btn-secondary{background:#28a745;color:#fff;display:none}
-    .btn-secondary:not(:disabled):hover{background:#218838;transform:translateY(-1px)}
+    .btn-secondary{background:#6c757d;color:#fff}
+    .btn-secondary:not(:disabled):hover{background:#5a6268}
+    .btn-action{background:#28a745;color:#fff;display:none}
+    .btn-action:not(:disabled):hover{background:#218838;transform:translateY(-1px)}
     .output-section{margin-top:2rem}
-    .output-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:1rem;margin-top:1rem;font-family:'Courier New',monospace;word-break:break-word;white-space:pre-wrap;max-height:400px;overflow-y:auto}
+    .output-box{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:1rem;margin-top:1rem;font-family:'Courier New',monospace;word-break:break-word;white-space:pre-wrap;max-height:400px;overflow-y:auto;position:relative}
+    .loader{position:absolute;top:50%;left:50%;border:4px solid #f3f3f3;border-radius:50%;border-top:4px solid #4285f4;width:40px;height:40px;animation:spin 1s linear infinite;transform:translate(-50%,-50%)}
+    @keyframes spin{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
     .html-render, .image-render, .md-render{font-family:inherit;white-space:normal;overflow-x:auto}
     .md-render{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
     .image-render img{max-width:100%;border-radius:8px;border:1px solid #ddd;margin-top:1rem;}
@@ -57,25 +63,23 @@
   <div class="container">
     <div class="header">
       <h1>Generador de enlaces de Google Drive</h1>
-      <div style="font-size:.9rem;opacity:.8;margin-top:.5rem">Versión 3.6.0</div>
+      <div style="font-size:.9rem;opacity:.8;margin-top:.5rem">Versión 4.0</div>
     </div>
 
     <div class="content">
       <div class="app-description">
-        <strong>¿Qué hace esta aplicación?</strong> Pega la URL de un documento de Google Drive (Hojas de Cálculo, Documentos, Presentaciones o Dibujos) y esta herramienta generará un enlace directo de descarga o de datos, listo para usar en tus proyectos.
+        <strong>¿Qué hace esta aplicación?</strong> Pega la URL de un documento de Google Drive y esta herramienta generará un enlace directo de descarga o de datos, listo para usar en tus proyectos.
       </div>
       
       <div class="warning"><span class="warning-icon">⚠️</span><div><strong>Requisito:</strong> el documento debe ser público (“Cualquiera con el enlace puede ver”).</div></div>
 
       <div class="form-group">
         <label for="inputUrl"><span class="icon">🔗</span> URL del documento de Google Drive</label>
-        <div class="description">Pega aquí la URL de tu documento, hoja, presentación o dibujo.</div>
         <input type="text" id="inputUrl" placeholder="https://docs.google.com/..." />
       </div>
 
       <div class="form-group" id="sheetNameGroup" style="display:none;">
         <label for="sheetName"><span class="icon">📋</span> Nombre de la hoja (opcional)</label>
-        <div class="description">Solo para Hojas de Cálculo. Si se deja en blanco, se usará la hoja activa en la URL (gid) o la primera.</div>
         <input type="text" id="sheetName" placeholder="Hoja1, Datos…" />
       </div>
 
@@ -84,6 +88,12 @@
         <select id="outputFormat">
             <option value="">Pega una URL para ver los formatos disponibles</option>
         </select>
+      </div>
+      
+      <div class="form-group" id="developerNote" style="display:none;">
+          <div class="dev-note">
+            <strong>Nota para desarrolladores:</strong> Para usar URL de datos (JSON, CSV, TSV) en una aplicación web desde el navegador (frontend), pueden surgir errores de <strong>CORS</strong>. Recomendamos usar el formato <strong>JSONP</strong> que está diseñado para esto. Alternativamente, la llamada debe hacerse desde un servidor (backend) que actuará como proxy.
+          </div>
       </div>
 
       <div class="form-group" id="linkTypeGroup" style="display:none;">
@@ -96,13 +106,13 @@
       
       <div class="form-group" id="slideIdGroup" style="display:none;">
         <label for="slideId"><span class="icon">🖼️</span> ID de la diapositiva (opcional)</label>
-        <div class="description">Para exportar una diapositiva específica como imagen. Se encuentra en la URL al seleccionar una diapositiva (ej: ...#slide=id.g123...). Si se deja en blanco, se usará la diapositiva por defecto.</div>
         <input type="text" id="slideId" placeholder="g12345678_0_0" />
       </div>
 
       <div class="button-group">
         <button class="btn-primary" id="btnGenerate"><span>🔄</span> Generar URL</button>
-        <button class="btn-secondary" id="copyUrlButton"><span>📋</span> Copiar URL</button>
+        <button class="btn-action" id="copyUrlButton"><span>📋</span> Copiar URL</button>
+        <button class="btn-secondary" id="btnClear"><span>🗑️</span> Limpiar</button>
       </div>
 
       <div class="output-section">
@@ -133,12 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const sheetNameGroup = document.getElementById('sheetNameGroup');
   const sheetNameEl = document.getElementById('sheetName');
   const outputFormatEl = document.getElementById('outputFormat');
+  const developerNote = document.getElementById('developerNote');
   const linkTypeGroup = document.getElementById('linkTypeGroup');
   const linkTypeEl = document.getElementById('linkType');
   const slideIdGroup = document.getElementById('slideIdGroup');
   const slideIdEl = document.getElementById('slideId');
   const btnGenerate = document.getElementById('btnGenerate');
   const copyUrlButton = document.getElementById('copyUrlButton');
+  const btnClear = document.getElementById('btnClear');
   const outputEl = document.getElementById('output');
   const previewEl = document.getElementById('rawTextOutput');
   const btnToggleView = document.getElementById('btnToggleView');
@@ -150,11 +162,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let isRendered = true;
   
   // --- CONSTANTES ---
-  const FRIENDLY_ERROR = "La API de Google ha devuelto un error. Causas comunes:\n1. Permisos: El documento debe ser público ('Cualquiera con el enlace puede ver').\n2. Datos incorrectos: La URL, el nombre de la hoja o el 'gid' son erróneos.";
-  
   const formats = {
     sheets: [
-        { group: 'Datos sin formato', options: [{value: 'csv', text: 'CSV'}, {value: 'json', text: 'JSON'}, {value: 'html', text: 'HTML'}, {value: 'tsv', text: 'TSV'}] },
+        { group: 'Datos sin formato', options: [
+            {value: 'json', text: 'JSON'}, 
+            {value: 'jsonp', text: 'JSONP (para web)'},
+            {value: 'csv', text: 'CSV'}, 
+            {value: 'html', text: 'HTML'}, 
+            {value: 'tsv', text: 'TSV'}
+        ]},
         { group: 'Archivos de documento', options: [{value: 'pdf', text: 'PDF'}, {value: 'xlsx', text: 'XLSX (Excel)'}, {value: 'ods', text: 'ODS (OpenDocument)'}] }
     ],
     docs: [
@@ -173,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const converter = new showdown.Converter({tables: true, strikethrough: true, tasklists: true});
 
-  const SHEETS_DATA_FORMATS = ['csv', 'json', 'html', 'tsv'];
+  const SHEETS_DATA_FORMATS = ['csv', 'json', 'jsonp', 'html', 'tsv'];
   const PLAIN_TEXT_FORMATS = ['txt'];
   const MARKDOWN_FORMAT = 'md';
   const IMAGE_FORMATS = ['jpeg', 'png', 'svg'];
@@ -215,42 +231,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isSlideImageExport = docType === 'slides' && IMAGE_FORMATS.includes(format);
     slideIdGroup.style.display = isSlideImageExport ? 'block' : 'none';
+    
+    const showDevNote = docType === 'sheets' && ['json', 'jsonp', 'csv', 'tsv'].includes(format);
+    developerNote.style.display = showDevNote ? 'block' : 'none';
   };
-
-  inputUrlEl.addEventListener('input', () => {
-    const url = inputUrlEl.value;
-    const docType = detectDocType(url);
-    sheetNameGroup.style.display = (docType === 'sheets') ? 'block' : 'none';
-    
-    const slideIdMatch = url.match(/#slide=id\.([^&]+)/);
-    slideIdEl.value = slideIdMatch && slideIdMatch[1] ? slideIdMatch[1] : '';
-    
-    updateFormatOptions(docType);
-  });
-  
-  outputFormatEl.addEventListener('change', toggleSelectors);
-
 
   const stripGviz = (raw) => {
     const trimmedRaw = raw.trim();
     if (trimmedRaw.toLowerCase().startsWith('<!doctype html')) {
-      console.error("Google devolvió una página HTML en lugar de JSONP:", trimmedRaw);
-      throw new Error(FRIENDLY_ERROR);
+      throw new Error("La API de Google devolvió una página HTML en lugar de datos. Comprueba los permisos del documento.");
     }
     try {
       const startIndex = trimmedRaw.indexOf('{');
       const endIndex = trimmedRaw.lastIndexOf('}');
-      if (startIndex === -1 || endIndex === -1) throw new Error("Respuesta de Google no contiene JSON.");
+      if (startIndex === -1 || endIndex === -1) throw new Error("La respuesta de Google no contiene datos JSON válidos.");
       const jsonString = trimmedRaw.substring(startIndex, endIndex + 1);
       const data = JSON.parse(jsonString);
       if (data.status === 'error') {
         const errorMessages = data.errors.map(e => e.detailed_message || e.message).join('\n');
-        throw new Error(errorMessages);
+        throw new Error(`Error de la API de Google: ${errorMessages}`);
       }
       return data;
     } catch (e) {
-      console.error("Error al procesar la respuesta de Google:", e.message);
-      throw new Error(e.message || FRIENDLY_ERROR);
+      console.error("Error al procesar la respuesta de Google:", e);
+      throw e;
     }
   };
   
@@ -315,184 +319,197 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000);
   };
 
+  const resetApp = () => {
+    inputUrlEl.value = '';
+    sheetNameEl.value = '';
+    slideIdEl.value = '';
+    outputEl.innerHTML = 'Esperando...';
+    outputEl.classList.remove('url-output');
+    previewEl.innerHTML = 'Vista previa no disponible. Genera una URL primero.';
+    copyUrlButton.style.display = 'none';
+    btnToggleView.style.display = 'none';
+    btnCopyPreview.style.display = 'none';
+    generatedUrl = '';
+    previewContent = '';
+    updateFormatOptions('unknown');
+  };
+  
+  // --- EVENT LISTENERS ---
+  inputUrlEl.addEventListener('input', () => {
+    const url = inputUrlEl.value;
+    const docType = detectDocType(url);
+    sheetNameGroup.style.display = (docType === 'sheets') ? 'block' : 'none';
+    const slideIdMatch = url.match(/#slide=id\.([^&]+)/);
+    slideIdEl.value = slideIdMatch && slideIdMatch[1] ? slideIdMatch[1] : '';
+    updateFormatOptions(docType);
+  });
+  
+  outputFormatEl.addEventListener('change', toggleSelectors);
+  btnClear.addEventListener('click', resetApp);
+  btnGenerate.addEventListener('click', handleGenerateUrl);
+  
   // --- FUNCIÓN PRINCIPAL ---
-  const handleGenerateUrl = async () => {
+  async function handleGenerateUrl() {
     const url = inputUrlEl.value.trim();
+    if (!url) return;
     const docType = detectDocType(url);
     const format = outputFormatEl.value;
     const linkType = linkTypeEl.value;
 
-    if (docType === 'unknown') {
-        outputEl.textContent = 'Error: URL de Google Drive no válida.';
-        outputEl.classList.remove('url-output');
-        return;
-    }
-
     const idMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    const id = idMatch ? idMatch[1] : null;
-    
-    if (!id) {
+    if (!idMatch || !idMatch[1]) {
         outputEl.textContent = 'Error: No se pudo extraer el ID del documento de la URL.';
         outputEl.classList.remove('url-output');
         return;
     }
-
-    // --- 1. Generar la URL para el usuario ---
+    const id = idMatch[1];
+    
+    // --- Generación de la URL ---
+    let userUrl = '';
     if (format === 'pdf' && linkType === 'preview') {
-        generatedUrl = `https://drive.google.com/file/d/${id}/preview`;
+        userUrl = `https://drive.google.com/file/d/${id}/preview`;
     } else if (IMAGE_FORMATS.includes(format)) {
-        generatedUrl = `https://docs.google.com/${docType === 'slides' ? 'presentation' : 'drawings'}/d/${id}/export/${format}`;
+        userUrl = `https://docs.google.com/${docType === 'slides' ? 'presentation' : 'drawings'}/d/${id}/export/${format}`;
         const slideId = slideIdEl.value.trim();
         if (docType === 'slides' && slideId) {
-            generatedUrl += `?pageid=${slideId}`;
+            userUrl += `?pageid=${slideId}`;
         }
-    } else if (format === 'json') {
+    } else if (format === 'json' || format === 'jsonp') {
+      const gvizBase = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq`;
+      const tqx = (format === 'jsonp') ? 'out:jsonp' : 'out:json';
       const gidMatch = url.match(/[#&]gid=([0-9]+)/);
       const gid = gidMatch ? gidMatch[1] : null;
       const sheet = sheetNameEl.value.trim();
-      let gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json`;
-      if(sheet) gvizUrl += `&sheet=${encodeURIComponent(sheet)}`;
-      else if(gid) gvizUrl += `&gid=${gid}`;
-      else gvizUrl += `&gid=0`;
-      generatedUrl = gvizUrl;
+      let params = `?tqx=${tqx}`;
+      if(sheet) params += `&sheet=${encodeURIComponent(sheet)}`;
+      else if(gid) params += `&gid=${gid}`;
+      else params += `&gid=0`;
+      userUrl = gvizBase + params;
     } else {
-        const docTypePath = docType === 'docs' ? 'document' : docType;
+        const pathMap = {
+            'sheets': 'spreadsheets',
+            'docs': 'document',
+            'slides': 'presentation',
+            'drawings': 'drawings'
+        };
+        const docTypePath = pathMap[docType] || docType;
         let exportUrlBase = `https://docs.google.com/${docTypePath}/d/${id}/export?format=${format}`;
         if (docType === 'sheets') {
           const gidMatch = url.match(/[#&]gid=([0-9]+)/);
           const gid = gidMatch ? gidMatch[1] : null;
-          if(gid) generatedUrl = `${exportUrlBase}&gid=${gid}`;
-          else generatedUrl = exportUrlBase;
+          if(gid) userUrl = `${exportUrlBase}&gid=${gid}`;
+          else userUrl = exportUrlBase;
         } else {
-          generatedUrl = exportUrlBase;
+          userUrl = exportUrlBase;
         }
     }
+    generatedUrl = userUrl;
 
-    // Actualizar UI
+    // --- Actualización de UI (inicio) ---
     btnGenerate.disabled = true;
     btnGenerate.innerHTML = '<span>⏳</span> Generando...';
-    previewEl.textContent = 'Cargando vista previa...';
+    previewEl.innerHTML = '<div class="loader"></div>';
     btnToggleView.style.display = 'none';
     btnCopyPreview.style.display = 'none';
     outputEl.innerHTML = `<a href="${generatedUrl}" target="_blank">${generatedUrl}</a>`;
     outputEl.classList.add('url-output');
     copyUrlButton.style.display = 'flex';
 
-    // --- 2. Generar y obtener datos para la vista previa ---
+    // --- Obtención y renderizado de la vista previa ---
     try {
-        if (SHEETS_DATA_FORMATS.includes(format)) {
-            const sheet = sheetNameEl.value.trim();
-            const gidMatch = url.match(/[#&]gid=([0-9]+)/);
-            const gid = gidMatch ? gidMatch[1] : null;
-            const previewApiUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq`;
-            let previewQueryParams = `tqx=out:json`;
-            if (sheet) previewQueryParams += `&sheet=${encodeURIComponent(sheet)}`;
-            else {
-                const finalGid = gid !== null ? gid : '0';
-                previewQueryParams += `&gid=${finalGid}`;
-            }
-            const previewUrl = `${previewApiUrl}?${previewQueryParams}`;
-            const response = await fetch(previewUrl);
-            const rawText = await response.text();
-            const data = stripGviz(rawText);
-
-            if (format === 'json') {
-                previewContent = JSON.stringify(data, null, 2);
-                 previewEl.textContent = previewContent;
-            } else if (format === 'html') {
-                previewContent = buildHtmlTable(data.table);
-                previewEl.innerHTML = `<div class="html-render">${previewContent}</div>`;
-                isRendered = true;
-                btnToggleView.textContent = 'código';
-                btnToggleView.style.display = 'inline-block';
-            } else { // csv, tsv
-                previewContent = (format === 'csv') ? jsonToText(data, ',') : jsonToText(data, '\t');
-                previewEl.textContent = previewContent;
-            }
-            btnCopyPreview.style.display = 'inline-block';
+        isRendered = ['pdf', 'html', 'md'].includes(format) || IMAGE_FORMATS.includes(format);
         
-        } else if (format === MARKDOWN_FORMAT || PLAIN_TEXT_FORMATS.includes(format)) {
-            const downloadUrl = `https://docs.google.com/document/d/${id}/export?format=${format}`;
-            const response = await fetch(downloadUrl);
-            if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
-            previewContent = await response.text();
-            
-            if (format === MARKDOWN_FORMAT) {
-                const htmlFromMd = converter.makeHtml(previewContent);
-                previewEl.innerHTML = `<div class="md-render">${htmlFromMd}</div>`;
-                isRendered = true;
-                btnToggleView.textContent = 'código';
-                btnToggleView.style.display = 'inline-block';
-            } else { // txt
-                 previewEl.textContent = previewContent;
-            }
-            btnCopyPreview.style.display = 'inline-block';
-        
-        } else if (format === 'pdf') {
-            const embedUrl = `https://drive.google.com/file/d/${id}/preview`;
-            previewContent = `<iframe src="${embedUrl}" style="width: 100%; height: 380px; border: none; border-radius: 8px;" title="Visor de PDF"></iframe>`;
-            previewEl.innerHTML = previewContent;
-            isRendered = true;
-            btnToggleView.textContent = 'código';
-            btnToggleView.style.display = 'inline-block';
-            btnCopyPreview.style.display = 'inline-block';
-
+        // Define previewUrl based on format
+        let previewUrl;
+        if (format === 'pdf') {
+            previewUrl = `https://drive.google.com/file/d/${id}/preview`;
         } else if (IMAGE_FORMATS.includes(format)) {
-            previewContent = `<img src="${generatedUrl}" alt="Imagen generada" style="max-width:100%;">`;
-            previewEl.innerHTML = `<div class="image-render">${previewContent}</div>`;
-            isRendered = true;
-            btnToggleView.textContent = 'código';
-            btnToggleView.style.display = 'inline-block';
-            btnCopyPreview.style.display = 'inline-block';
-
+            previewUrl = generatedUrl;
+        } else if (SHEETS_DATA_FORMATS.includes(format)) {
+            previewUrl = generatedUrl.replace('out:jsonp', 'out:json'); // Preview always uses json for gviz
         } else {
-            previewEl.textContent = `La vista previa no está disponible para formatos de archivo como ${format.toUpperCase()}.\nEl enlace generado es para descarga directa.`;
+            previewUrl = generatedUrl;
         }
+
+        if (format === 'pdf') {
+            previewContent = `<iframe src="${previewUrl}" style="width: 100%; height: 380px; border: none; border-radius: 8px;" title="Visor de PDF"></iframe>`;
+            previewEl.innerHTML = previewContent;
+        } else if (IMAGE_FORMATS.includes(format)) {
+            previewContent = `<img src="${previewUrl}" alt="Vista previa de la imagen" style="max-width:100%;" onerror="this.parentElement.innerHTML = 'Error al cargar la imagen. Comprueba que el ID de la diapositiva es correcto y que el documento es público.'">`;
+            previewEl.innerHTML = `<div class="image-render">${previewContent}</div>`;
+        } else if (SHEETS_DATA_FORMATS.includes(format) || PLAIN_TEXT_FORMATS.includes(format) || format === 'md') {
+            const response = await fetch(previewUrl);
+            if (!response.ok) throw new Error(`Error de red: ${response.status} ${response.statusText}`);
+            const rawText = await response.text();
+
+            if (SHEETS_DATA_FORMATS.includes(format)) {
+                if (format === 'html') {
+                    // For sheets, the HTML format comes from the export endpoint directly
+                    previewContent = rawText;
+                    previewEl.innerHTML = `<div class="html-render">${previewContent}</div>`;
+                } else {
+                    const data = stripGviz(rawText);
+                    if (format === 'csv') {
+                        previewContent = jsonToText(data, ',');
+                        previewEl.textContent = previewContent;
+                    } else if (format === 'tsv') {
+                        previewContent = jsonToText(data, '\t');
+                        previewEl.textContent = previewContent;
+                    } else { // json & jsonp
+                        previewContent = JSON.stringify(data, null, 2);
+                        previewEl.textContent = previewContent;
+                    }
+                }
+            } else { // txt, md
+                previewContent = rawText;
+                if(format === 'md') {
+                    previewEl.innerHTML = `<div class="md-render">${converter.makeHtml(rawText)}</div>`;
+                } else {
+                    previewEl.textContent = rawText;
+                }
+            }
+        } else {
+            previewEl.textContent = `La vista previa no está disponible para formatos como ${format.toUpperCase()}.\nEl enlace generado es para descarga directa.`;
+            previewContent = previewEl.textContent;
+        }
+
+        if (isRendered) {
+             btnToggleView.textContent = 'código';
+             btnToggleView.style.display = 'inline-block';
+        }
+        if(previewContent) btnCopyPreview.style.display = 'inline-block';
+
     } catch (error) {
-        console.error('Error fetching preview:', error.message);
-        previewEl.textContent = `Error al cargar la vista previa. \nDetalles: ${error.message}`;
+        console.error('Error en handleGenerateUrl:', error);
+        previewEl.textContent = `Error al cargar la vista previa.\nCausas comunes: el documento no es público, la URL es incorrecta o el ID de la hoja/diapositiva no existe.\nDetalles: ${error.message}`;
     } finally {
         btnGenerate.disabled = false;
         btnGenerate.innerHTML = '<span>🔄</span> Generar URL';
     }
-  };
+  }
 
-  // --- EVENT LISTENERS ---
-  btnGenerate.addEventListener('click', handleGenerateUrl);
   copyUrlButton.addEventListener('click', () => copyToClipboard(generatedUrl, copyUrlButton));
   btnCopyPreview.addEventListener('click', () => {
-      const format = outputFormatEl.value;
-      const isCodeView = !isRendered;
-      if (isCodeView && (format === 'pdf' || IMAGE_FORMATS.includes(format) || format === 'html' || format === 'md')) {
-        copyToClipboard(previewContent, btnCopyPreview);
-      } else {
-        copyToClipboard(previewEl.textContent, btnCopyPreview);
-      }
+    copyToClipboard(previewContent, btnCopyPreview);
   });
   
   btnToggleView.addEventListener('click', () => {
     const format = outputFormatEl.value;
     const isToggleable = format === 'html' || format === 'md' || format === 'pdf' || IMAGE_FORMATS.includes(format);
-
     if (!isToggleable) return;
 
     isRendered = !isRendered;
     if (isRendered) {
-        // VISTA RENDERIZADA
-        let renderedHtml;
         if (format === 'md') {
-            renderedHtml = `<div class="md-render">${converter.makeHtml(previewContent)}</div>`;
+             previewEl.innerHTML = `<div class="md-render">${converter.makeHtml(previewContent)}</div>`;
         } else if (format === 'html') {
-             renderedHtml = `<div class="html-render">${previewContent}</div>`;
-        } else if (IMAGE_FORMATS.includes(format)){
-             renderedHtml = `<div class="image-render">${previewContent}</div>`;
-        } else { // PDF
-            renderedHtml = previewContent;
+             previewEl.innerHTML = `<div class="html-render">${previewContent}</div>`;
         }
-        previewEl.innerHTML = renderedHtml;
+        else { // PDF and Images
+             previewEl.innerHTML = previewContent;
+        }
         btnToggleView.textContent = 'código';
     } else {
-        // VISTA DE CÓDIGO
         previewEl.textContent = previewContent;
         btnToggleView.textContent = 'vista previa';
     }
