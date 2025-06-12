@@ -18,8 +18,6 @@
     .form-group{margin-bottom:1.5rem}
     .form-group label{display:block;font-weight:600;margin-bottom:.5rem;color:#2c3e50}
     .form-group .description{font-size:.9rem;color:#6c757d;margin-bottom:.8rem;line-height:1.4}
-    .dev-note{background:#f1f3f5;border:1px solid #dee2e6;padding:.8rem;border-radius:8px;font-size:.9rem}
-    .dev-note strong{color:#0d6efd}
     input[type=text],select{width:100%;padding:.75rem;border:2px solid #e9ecef;border-radius:8px;font-size:1rem;transition:border-color .3s ease}
     select{background:#fff;cursor:pointer}
     input[type=text]:focus,select:focus{outline:none;border-color:#4285f4;box-shadow:0 0 0 3px rgba(66,133,244,.1)}
@@ -90,12 +88,6 @@
         </select>
       </div>
       
-      <div class="form-group" id="developerNote" style="display:none;">
-          <div class="dev-note">
-            <strong>Nota para desarrolladores:</strong> Para usar URL de datos (JSON, CSV, TSV) en una aplicación web desde el navegador (frontend), pueden surgir errores de <strong>CORS</strong>. Recomendamos usar el formato <strong>JSONP</strong> que está diseñado para esto. Alternativamente, la llamada debe hacerse desde un servidor (backend) que actuará como proxy.
-          </div>
-      </div>
-
       <div class="form-group" id="linkTypeGroup" style="display:none;">
         <label for="linkType">Tipo de enlace</label>
         <select id="linkType">
@@ -143,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const sheetNameGroup = document.getElementById('sheetNameGroup');
   const sheetNameEl = document.getElementById('sheetName');
   const outputFormatEl = document.getElementById('outputFormat');
-  const developerNote = document.getElementById('developerNote');
   const linkTypeGroup = document.getElementById('linkTypeGroup');
   const linkTypeEl = document.getElementById('linkType');
   const slideIdGroup = document.getElementById('slideIdGroup');
@@ -231,9 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isSlideImageExport = docType === 'slides' && IMAGE_FORMATS.includes(format);
     slideIdGroup.style.display = isSlideImageExport ? 'block' : 'none';
-    
-    const showDevNote = docType === 'sheets' && ['json', 'jsonp', 'csv', 'tsv'].includes(format);
-    developerNote.style.display = showDevNote ? 'block' : 'none';
   };
 
   const stripGviz = (raw) => {
@@ -366,10 +354,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- Generación de la URL ---
     let userUrl = '';
+    const pathMap = {
+        'sheets': 'spreadsheets',
+        'docs': 'document',
+        'slides': 'presentation',
+        'drawings': 'drawings'
+    };
+    const docTypePath = pathMap[docType] || docType;
+
     if (format === 'pdf' && linkType === 'preview') {
         userUrl = `https://drive.google.com/file/d/${id}/preview`;
     } else if (IMAGE_FORMATS.includes(format)) {
-        userUrl = `https://docs.google.com/${docType === 'slides' ? 'presentation' : 'drawings'}/d/${id}/export/${format}`;
+        userUrl = `https://docs.google.com/${docTypePath}/d/${id}/export/${format}`;
         const slideId = slideIdEl.value.trim();
         if (docType === 'slides' && slideId) {
             userUrl += `?pageid=${slideId}`;
@@ -386,13 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
       else params += `&gid=0`;
       userUrl = gvizBase + params;
     } else {
-        const pathMap = {
-            'sheets': 'spreadsheets',
-            'docs': 'document',
-            'slides': 'presentation',
-            'drawings': 'drawings'
-        };
-        const docTypePath = pathMap[docType] || docType;
         let exportUrlBase = `https://docs.google.com/${docTypePath}/d/${id}/export?format=${format}`;
         if (docType === 'sheets') {
           const gidMatch = url.match(/[#&]gid=([0-9]+)/);
@@ -423,56 +412,53 @@ document.addEventListener('DOMContentLoaded', () => {
         let previewUrl;
         if (format === 'pdf') {
             previewUrl = `https://drive.google.com/file/d/${id}/preview`;
-        } else if (IMAGE_FORMATS.includes(format)) {
-            previewUrl = generatedUrl;
-        } else if (SHEETS_DATA_FORMATS.includes(format)) {
-            previewUrl = generatedUrl.replace('out:jsonp', 'out:json'); // Preview always uses json for gviz
+        } else if (docType === 'sheets' && ['csv', 'tsv', 'json', 'jsonp'].includes(format)) {
+             const gvizBase = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq`;
+             const gidMatch = url.match(/[#&]gid=([0-9]+)/);
+             const gid = gidMatch ? gidMatch[1] : null;
+             const sheet = sheetNameEl.value.trim();
+             let params = `?tqx=out:json`;
+             if(sheet) params += `&sheet=${encodeURIComponent(sheet)}`;
+             else if(gid) params += `&gid=${gid}`;
+             else params += `&gid=0`;
+             previewUrl = gvizBase + params;
         } else {
             previewUrl = generatedUrl;
         }
-
+        
         if (format === 'pdf') {
             previewContent = `<iframe src="${previewUrl}" style="width: 100%; height: 380px; border: none; border-radius: 8px;" title="Visor de PDF"></iframe>`;
             previewEl.innerHTML = previewContent;
         } else if (IMAGE_FORMATS.includes(format)) {
             previewContent = `<img src="${previewUrl}" alt="Vista previa de la imagen" style="max-width:100%;" onerror="this.parentElement.innerHTML = 'Error al cargar la imagen. Comprueba que el ID de la diapositiva es correcto y que el documento es público.'">`;
             previewEl.innerHTML = `<div class="image-render">${previewContent}</div>`;
-        } else if (SHEETS_DATA_FORMATS.includes(format) || PLAIN_TEXT_FORMATS.includes(format) || format === 'md') {
+        } else {
             const response = await fetch(previewUrl);
             if (!response.ok) throw new Error(`Error de red: ${response.status} ${response.statusText}`);
             const rawText = await response.text();
-
-            if (SHEETS_DATA_FORMATS.includes(format)) {
-                if (format === 'html') {
-                    // For sheets, the HTML format comes from the export endpoint directly
-                    previewContent = rawText;
-                    previewEl.innerHTML = `<div class="html-render">${previewContent}</div>`;
-                } else {
-                    const data = stripGviz(rawText);
-                    if (format === 'csv') {
-                        previewContent = jsonToText(data, ',');
-                        previewEl.textContent = previewContent;
-                    } else if (format === 'tsv') {
-                        previewContent = jsonToText(data, '\t');
-                        previewEl.textContent = previewContent;
-                    } else { // json & jsonp
-                        previewContent = JSON.stringify(data, null, 2);
-                        previewEl.textContent = previewContent;
-                    }
-                }
-            } else { // txt, md
+            
+            if (docType === 'sheets' && ['csv', 'tsv', 'json', 'jsonp'].includes(format)) {
+                 const data = stripGviz(rawText);
+                 if (format === 'csv') {
+                    previewContent = jsonToText(data, ',');
+                 } else if (format === 'tsv') {
+                    previewContent = jsonToText(data, '\t');
+                 } else { // json & jsonp
+                    previewContent = JSON.stringify(data, null, 2);
+                 }
+                 previewEl.textContent = previewContent;
+            } else {
                 previewContent = rawText;
-                if(format === 'md') {
-                    previewEl.innerHTML = `<div class="md-render">${converter.makeHtml(rawText)}</div>`;
-                } else {
+                if (format === 'html') {
+                     previewEl.innerHTML = `<div class="html-render">${rawText}</div>`;
+                } else if (format === 'md') {
+                     previewEl.innerHTML = `<div class="md-render">${converter.makeHtml(rawText)}</div>`;
+                } else { // txt
                     previewEl.textContent = rawText;
                 }
             }
-        } else {
-            previewEl.textContent = `La vista previa no está disponible para formatos como ${format.toUpperCase()}.\nEl enlace generado es para descarga directa.`;
-            previewContent = previewEl.textContent;
         }
-
+        
         if (isRendered) {
              btnToggleView.textContent = 'código';
              btnToggleView.style.display = 'inline-block';
