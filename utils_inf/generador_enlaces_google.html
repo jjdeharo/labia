@@ -61,7 +61,7 @@
   <div class="container">
     <div class="header">
       <h1>Generador de enlaces de Google Drive</h1>
-      <div style="font-size:.9rem;opacity:.8;margin-top:.5rem">Versión 4.0</div>
+      <div style="font-size:.9rem;opacity:.8;margin-top:.5rem">Versión 4.1</div>
     </div>
 
     <div class="content">
@@ -156,9 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const formats = {
     sheets: [
         { group: 'Datos sin formato', options: [
+            {value: 'csv', text: 'CSV'},
             {value: 'json', text: 'JSON'}, 
             {value: 'jsonp', text: 'JSONP (para web)'},
-            {value: 'csv', text: 'CSV'}, 
             {value: 'html', text: 'HTML'}, 
             {value: 'tsv', text: 'TSV'}
         ]},
@@ -180,9 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const converter = new showdown.Converter({tables: true, strikethrough: true, tasklists: true});
 
-  const SHEETS_DATA_FORMATS = ['csv', 'json', 'jsonp', 'html', 'tsv'];
-  const PLAIN_TEXT_FORMATS = ['txt'];
-  const MARKDOWN_FORMAT = 'md';
   const IMAGE_FORMATS = ['jpeg', 'png', 'svg'];
   
   // --- FUNCIONES AUXILIARES ---
@@ -408,20 +405,20 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         isRendered = ['pdf', 'html', 'md'].includes(format) || IMAGE_FORMATS.includes(format);
         
-        // Define previewUrl based on format
         let previewUrl;
         if (format === 'pdf') {
             previewUrl = `https://drive.google.com/file/d/${id}/preview`;
-        } else if (docType === 'sheets' && ['csv', 'tsv', 'json', 'jsonp'].includes(format)) {
-             const gvizBase = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq`;
-             const gidMatch = url.match(/[#&]gid=([0-9]+)/);
-             const gid = gidMatch ? gidMatch[1] : null;
-             const sheet = sheetNameEl.value.trim();
-             let params = `?tqx=out:json`;
-             if(sheet) params += `&sheet=${encodeURIComponent(sheet)}`;
-             else if(gid) params += `&gid=${gid}`;
-             else params += `&gid=0`;
-             previewUrl = gvizBase + params;
+        } else if (docType === 'sheets' && ['json', 'jsonp'].includes(format)) {
+            const gvizBase = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq`;
+            const gidMatch = url.match(/[#&]gid=([0-9]+)/);
+            const gid = gidMatch ? gidMatch[1] : null;
+            const sheet = sheetNameEl.value.trim();
+            const tqx = (format === 'jsonp') ? 'out:jsonp' : 'out:json';
+            let params = `?tqx=${tqx}`;
+            if(sheet) params += `&sheet=${encodeURIComponent(sheet)}`;
+            else if(gid) params += `&gid=${gid}`;
+            else params += `&gid=0`;
+            previewUrl = gvizBase + params;
         } else {
             previewUrl = generatedUrl;
         }
@@ -437,25 +434,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(`Error de red: ${response.status} ${response.statusText}`);
             const rawText = await response.text();
             
-            if (docType === 'sheets' && ['csv', 'tsv', 'json', 'jsonp'].includes(format)) {
+            if (format === 'json') {
                  const data = stripGviz(rawText);
-                 if (format === 'csv') {
-                    previewContent = jsonToText(data, ',');
-                 } else if (format === 'tsv') {
-                    previewContent = jsonToText(data, '\t');
-                 } else { // json & jsonp
-                    previewContent = JSON.stringify(data, null, 2);
-                 }
-                 previewEl.textContent = previewContent;
+                 previewContent = JSON.stringify(data, null, 2);
             } else {
                 previewContent = rawText;
-                if (format === 'html') {
-                     previewEl.innerHTML = `<div class="html-render">${rawText}</div>`;
-                } else if (format === 'md') {
-                     previewEl.innerHTML = `<div class="md-render">${converter.makeHtml(rawText)}</div>`;
-                } else { // txt
-                    previewEl.textContent = rawText;
-                }
+            }
+
+            if (format === 'html') {
+                 previewEl.innerHTML = `<div class="html-render">${previewContent}</div>`;
+            } else if (format === 'md') {
+                 previewEl.innerHTML = `<div class="md-render">${converter.makeHtml(previewContent)}</div>`;
+            } else {
+                previewEl.textContent = previewContent;
             }
         }
         
